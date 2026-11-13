@@ -37,6 +37,8 @@
     logout: '<path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 8l4 4-4 4M20 12H9"/>',
     spark: '<path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/>',
     external: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    download: '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
     inbox: '<path d="M4 13l2-8h12l2 8M4 13v6h16v-6M4 13h5l1 2h4l1-2h5"/>'
   };
 
@@ -115,7 +117,7 @@
     return fetch(ROOT + 'manifest.json', { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
-    });
+    }).then(function (m) { PREVIEWS = m._previews || {}; return m; });
   }
 
   function optionalText(path) { return getText(path).catch(function () { return ''; }); }
@@ -215,15 +217,110 @@
     return g;
   }
 
+  /* ============ Vista previa ============ */
+
+  var PREVIEWS = {};          // ruta original -> PDF generado al publicar
+  var IMG_RE = /^(png|jpg|jpeg|gif|webp|svg)$/;
+  var VID_RE = /^(mp4|webm|mov)$/;
+  var TXT_RE = /^(txt|md|csv|json)$/;
+
+  function previewKind(url, ext, key) {
+    if (ext === 'pdf') return { type: 'pdf', src: url };
+    if (PREVIEWS[key]) return { type: 'pdf', src: ROOT + encodePath(PREVIEWS[key]) };
+    if (IMG_RE.test(ext)) return { type: 'img', src: url };
+    if (VID_RE.test(ext)) return { type: 'video', src: url };
+    if (TXT_RE.test(ext)) return { type: 'text', src: url };
+    return null;
+  }
+
+  var modal = null;
+
+  function closePreview() {
+    if (!modal) return;
+    document.body.classList.remove('modal-open');
+    modal.remove();
+    modal = null;
+    document.removeEventListener('keydown', onModalKey);
+  }
+
+  function onModalKey(e) { if (e.key === 'Escape') closePreview(); }
+
+  function openPreview(sectionId, path) {
+    closePreview();
+    var key = sectionId + '/' + path;
+    var url = ROOT + encodePath(key);
+    var ext = fileExt(path);
+    var pv = previewKind(url, ext, key);
+    var body = h('div', { class: 'pv-body' });
+
+    if (pv && pv.type === 'pdf') {
+      body.appendChild(h('iframe', { class: 'pv-frame', src: pv.src + '#view=FitH', title: fileTitle(path) }));
+    } else if (pv && pv.type === 'img') {
+      body.appendChild(h('img', { class: 'pv-img', src: pv.src, alt: fileTitle(path) }));
+    } else if (pv && pv.type === 'video') {
+      body.appendChild(h('video', { class: 'pv-video', src: pv.src, controls: 'controls' }));
+    } else if (pv && pv.type === 'text') {
+      var pre = h('pre', { class: 'pv-text', text: 'Cargando…' });
+      body.appendChild(pre);
+      getText(key).then(function (t) { pre.textContent = t; }, function () { pre.textContent = 'No se pudo cargar el archivo.'; });
+    } else {
+      body.appendChild(h('div', { class: 'empty pv-none' },
+        h('span', { class: 'tile' }, icon('inbox', 22)),
+        h('p', { text: 'Este tipo de archivo no tiene vista previa. Puedes descargarlo para abrirlo.' })));
+    }
+
+    var bar = h('div', { class: 'pv-bar' },
+      h('span', { class: 'pv-title', text: fileTitle(path) }),
+      h('a', { class: 'btn', href: url, target: '_blank', rel: 'noopener' }, icon('external', 16), 'Abrir'),
+      h('a', { class: 'btn', href: url, download: baseName(path) }, icon('download', 16), 'Descargar'),
+      h('button', { class: 'btn primary', type: 'button', 'aria-label': 'Cerrar', onclick: closePreview }, icon('close', 16), 'Cerrar'));
+
+    modal = h('div', { class: 'pv-backdrop', role: 'dialog', 'aria-modal': 'true', 'aria-label': fileTitle(path) },
+      h('div', { class: 'pv-box' }, bar, body));
+    modal.addEventListener('click', function (e) { if (e.target === modal) closePreview(); });
+    document.addEventListener('keydown', onModalKey);
+    document.body.classList.add('modal-open');
+    document.body.appendChild(modal);
+  }
+
+  // Cada asignatura tiene un color según su nombre; si dos coinciden, la segunda pasa
+  // al siguiente color libre (mientras haya menos de 10 asignaturas no se repite ninguno).
+  var SUBJ_COLORS = 10;
+  var subjMap = {};
+  function nameHash(name) {
+    var hsh = 0, n = name.normalize('NFC').trim().toLowerCase();
+    for (var i = 0; i < n.length; i++) hsh = (hsh * 31 + n.charCodeAt(i)) >>> 0;
+    return hsh;
+  }
+  function assignSubjColors(names) {
+    var used = {}, count = 0;
+    subjMap = {};
+    names.slice().sort(cmp).forEach(function (n) {
+      var slot = nameHash(n) % SUBJ_COLORS;
+      if (count < SUBJ_COLORS) { while (used[slot]) slot = (slot + 1) % SUBJ_COLORS; used[slot] = true; count++; }
+      subjMap[n] = slot;
+    });
+  }
+  function subjClass(name) {
+    return 'subj-' + (name in subjMap ? subjMap[name] : nameHash(name) % SUBJ_COLORS);
+  }
+
   function fileCard(sectionId, path) {
     var ext = fileExt(path), k = fileKind(ext);
-    return h('a', { class: 'card file-card item', href: ROOT + encodePath(sectionId + '/' + path),
+    var card = h('a', { class: 'card file-card item', href: ROOT + encodePath(sectionId + '/' + path),
                     target: '_blank', rel: 'noopener', 'data-search': fileTitle(path).toLowerCase() },
       h('span', { class: 'ft ft-' + k.cls, text: (ext || 'file').toUpperCase().slice(0, 4) }),
       h('span', { class: 'file-info' },
         h('span', { class: 'file-name', text: fileTitle(path) }),
         h('span', { class: 'file-sub', text: k.label })),
-      h('span', { class: 'ext-ico' }, icon('external', 18)));
+      h('span', { class: 'ext-ico' }, icon('search', 18)));
+    // Clic normal: vista previa. Ctrl/Cmd/clic central: abre el archivo en otra pestaña.
+    card.addEventListener('click', function (e) {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+      e.preventDefault();
+      openPreview(sectionId, path);
+    });
+    return card;
   }
 
   function fileGroups(sectionId, prefix, paths) {
@@ -336,6 +433,7 @@
       getManifest().then(function (m) {
         var data = groupFolders(m[s.id] || []);
         var names = Object.keys(data.folders).sort(cmp);
+        assignSubjColors(names);
         var chosen = '';
         try { chosen = decodeURIComponent((location.hash || '').slice(1)); } catch (e) { chosen = ''; }
 
@@ -344,7 +442,9 @@
           main.appendChild(h('div', { class: 'crumbs' },
             h('a', { class: 'back', href: '#' }, icon('back', 16), s.name)));
           pageHead(main, nice(chosen), plural(files.length, 'archivo', 'archivos'));
-          main.appendChild(fileGroups(s.id, chosen + '/', files));
+          var detail = fileGroups(s.id, chosen + '/', files);
+          if (s.id === 'diapositivas') detail.classList.add(subjClass(chosen));
+          main.appendChild(detail);
           window.scrollTo(0, 0);
           return;
         }
@@ -359,7 +459,7 @@
         if (names.length) {
           var grid = h('div', { class: 'grid' });
           names.forEach(function (n) {
-            grid.appendChild(h('a', { class: 'card c-' + s.id, href: '#' + encodeURIComponent(n) },
+            grid.appendChild(h('a', { class: 'card c-' + s.id + (s.id === 'diapositivas' ? ' ' + subjClass(n) : ''), href: '#' + encodeURIComponent(n) },
               h('span', { class: 'tile' }, icon('folder', 24)),
               h('span', { class: 'card-title', text: nice(n) }),
               h('div', { class: 'card-foot' },
