@@ -12,13 +12,42 @@
 
   // Secciones de la web. Para añadir una, añade una línea aquí y crea su carpeta.
   var SECTIONS = [
-    { id: 'diapositivas', name: 'Diapositivas', desc: 'Presentaciones, ordenadas por asignatura.',
-      kind: 'folders', noun: 'asignatura', nouns: 'asignaturas', back: 'Asignaturas' },
-    { id: 'organizacion', name: 'Organización', desc: 'Reuniones, tareas, objetivos y procesos.',
-      kind: 'folders', noun: 'carpeta', nouns: 'carpetas', back: 'Carpetas' },
-    { id: 'recursos', name: 'Recursos', desc: 'Enlaces, PDF y material que me sirve.', kind: 'recursos' },
-    { id: 'prompts', name: 'Prompts', desc: 'Los que uso siempre, listos para copiar.', kind: 'prompts' }
+    { id: 'diapositivas', name: 'Diapositivas', icon: 'slides', desc: 'Presentaciones, ordenadas por asignatura.',
+      kind: 'folders', noun: 'asignatura', nouns: 'asignaturas' },
+    { id: 'organizacion', name: 'Organización', icon: 'clipboard', desc: 'Reuniones, tareas, objetivos y procesos.',
+      kind: 'folders', noun: 'carpeta', nouns: 'carpetas' },
+    { id: 'recursos', name: 'Recursos', icon: 'bookmark', desc: 'Enlaces, PDF y material que me sirve.', kind: 'recursos' },
+    { id: 'prompts', name: 'Prompts', icon: 'chat', desc: 'Los que uso siempre, listos para copiar.', kind: 'prompts' }
   ];
+
+  /* ============ Iconos ============ */
+
+  var ICONS = {
+    slides: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/>',
+    clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/>',
+    bookmark: '<path d="M6 4h12v17l-6-4-6 4z"/>',
+    chat: '<path d="M4 5h16v11H9l-5 4z"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+    check: '<path d="M5 12l5 5 10-10"/>',
+    back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+    logout: '<path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 8l4 4-4 4M20 12H9"/>',
+    spark: '<path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/>',
+    external: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    inbox: '<path d="M4 13l2-8h12l2 8M4 13v6h16v-6M4 13h5l1 2h4l1-2h5"/>'
+  };
+
+  function icon(name, size) {
+    var s = document.createElement('span');
+    s.className = 'ico';
+    var n = size || 20;
+    s.innerHTML = '<svg viewBox="0 0 24 24" width="' + n + '" height="' + n + '" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>';
+    return s;
+  }
 
   /* ============ Utilidades ============ */
 
@@ -46,9 +75,7 @@
   }
 
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
-
   function cmp(a, b) { return a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' }); }
-
   function encodePath(p) { return p.split('/').map(encodeURIComponent).join('/'); }
 
   function nice(name) {
@@ -58,12 +85,23 @@
   }
 
   function baseName(p) { return p.slice(p.lastIndexOf('/') + 1); }
-
   function fileTitle(p) { return nice(baseName(p).replace(/\.[^.]+$/, '')); }
 
   function fileExt(p) {
     var m = baseName(p).match(/\.([^.]+)$/);
-    return m ? m[1].toUpperCase().slice(0, 5) : '';
+    return m ? m[1].toLowerCase() : '';
+  }
+
+  function fileKind(ext) {
+    if (ext === 'pdf') return { cls: 'pdf', label: 'Documento PDF' };
+    if (/^(ppt|pptx|pps|ppsx|key|odp)$/.test(ext)) return { cls: 'ppt', label: 'Presentación' };
+    if (/^(doc|docx|odt|rtf)$/.test(ext)) return { cls: 'doc', label: 'Documento' };
+    if (/^(xls|xlsx|csv|ods)$/.test(ext)) return { cls: 'xls', label: 'Hoja de cálculo' };
+    if (/^(png|jpg|jpeg|gif|webp|svg)$/.test(ext)) return { cls: 'img', label: 'Imagen' };
+    if (/^(mp4|mov|webm|mkv)$/.test(ext)) return { cls: 'vid', label: 'Vídeo' };
+    if (/^(zip|rar|7z)$/.test(ext)) return { cls: 'zip', label: 'Archivo comprimido' };
+    if (/^(txt|md)$/.test(ext)) return { cls: 'other', label: 'Texto' };
+    return { cls: 'other', label: 'Archivo' };
   }
 
   function getText(path) {
@@ -82,14 +120,30 @@
 
   function optionalText(path) { return getText(path).catch(function () { return ''; }); }
 
-  function errorNote(main) {
-    main.appendChild(h('p', { class: 'note',
-      text: 'No se pudo cargar el contenido. Esta página funciona una vez publicada en GitHub Pages; ' +
-            'si la abres directamente desde tu ordenador, no puede leer las carpetas.' }));
+  function sectionById(id) { return SECTIONS.filter(function (s) { return s.id === id; })[0]; }
+
+  function pageHead(main, title, lead) {
+    main.appendChild(h('h1', { text: title }));
+    if (lead) main.appendChild(h('p', { class: 'lead', text: lead }));
   }
 
-  function emptyNote(text, code) {
-    return h('p', { class: 'note' }, text + ' ', h('code', { text: code }));
+  function errorNote(main) {
+    main.appendChild(h('div', { class: 'empty' },
+      h('span', { class: 'tile' }, icon('inbox', 22)),
+      h('p', { text: 'No se pudo cargar el contenido. Esta página funciona una vez publicada en GitHub Pages; ' +
+                     'si la abres directamente desde tu ordenador, no puede leer las carpetas.' })));
+  }
+
+  function emptyNote(text, code, extra) {
+    var box = h('div', { class: 'empty' },
+      h('span', { class: 'tile' }, icon('inbox', 22)),
+      h('p', null, text + ' ', h('code', { text: code }), '.'));
+    if (extra) {
+      var p = h('p');
+      extra.forEach(function (c) { p.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+      box.appendChild(p);
+    }
+    return box;
   }
 
   /* ============ Lectura de archivos de texto ============ */
@@ -141,7 +195,6 @@
 
   /* ============ Carpetas en el manifiesto ============ */
 
-  // "Mates/Tema 1/a.pdf" -> { folders: { Mates: ["Tema 1/a.pdf"] }, loose: [...] }
   function groupFolders(list) {
     var folders = {}, loose = [];
     list.forEach(function (p) {
@@ -152,7 +205,6 @@
     return { folders: folders, loose: loose };
   }
 
-  // Agrupa rutas por subcarpeta: { "": [...], "Tema 1": [...] }
   function groupByDir(list) {
     var g = {};
     list.forEach(function (p) {
@@ -163,25 +215,35 @@
     return g;
   }
 
-  function fileRow(sectionId, path) {
-    return h('a', { class: 'file item', href: ROOT + encodePath(sectionId + '/' + path),
+  function fileCard(sectionId, path) {
+    var ext = fileExt(path), k = fileKind(ext);
+    return h('a', { class: 'card file-card item', href: ROOT + encodePath(sectionId + '/' + path),
                     target: '_blank', rel: 'noopener', 'data-search': fileTitle(path).toLowerCase() },
-      h('span', { class: 'file-name', text: fileTitle(path) }),
-      fileExt(path) ? h('span', { class: 'tag', text: fileExt(path) }) : null);
+      h('span', { class: 'ft ft-' + k.cls, text: (ext || 'file').toUpperCase().slice(0, 4) }),
+      h('span', { class: 'file-info' },
+        h('span', { class: 'file-name', text: fileTitle(path) }),
+        h('span', { class: 'file-sub', text: k.label })),
+      h('span', { class: 'ext-ico' }, icon('external', 18)));
   }
 
-  function fileGroups(sectionId, prefix, paths, headingTag) {
+  function fileGroups(sectionId, prefix, paths) {
     var wrap = h('div');
     var g = groupByDir(paths);
     Object.keys(g).sort(function (a, b) {
-      if (a === '') return -1; if (b === '') return 1; return cmp(a, b);
+      if (a === '') return -1;
+      if (b === '') return 1;
+      return cmp(a, b);
     }).forEach(function (dir) {
       var files = g[dir].slice().sort(function (a, b) { return cmp(baseName(a), baseName(b)); });
-      var rows = h('div', { class: 'rows' });
-      files.forEach(function (p) { rows.appendChild(fileRow(sectionId, prefix + p)); });
+      var grid = h('div', { class: 'grid files' });
+      files.forEach(function (p) { grid.appendChild(fileCard(sectionId, prefix + p)); });
       var box = h('div', { class: 'group' });
-      if (dir) box.appendChild(h(headingTag || 'h2', { text: nice(dir.split('/').join(' / ')) }));
-      box.appendChild(rows);
+      if (dir) {
+        box.appendChild(h('div', { class: 'sec-title' },
+          icon('folder', 18), nice(dir.split('/').join(' / ')),
+          h('span', { class: 'count', text: String(files.length) })));
+      }
+      box.appendChild(grid);
       wrap.appendChild(box);
     });
     return wrap;
@@ -192,6 +254,7 @@
   function addSearch(main, container, placeholder) {
     var input = h('input', { class: 'search', type: 'search', placeholder: placeholder,
                              'aria-label': placeholder, autocomplete: 'off' });
+    var none = h('div', { class: 'empty hidden' }, h('p', { text: 'No hay resultados para esa búsqueda.' }));
     input.addEventListener('input', function () {
       var q = input.value.trim().toLowerCase();
       container.querySelectorAll('.item').forEach(function (it) {
@@ -201,17 +264,19 @@
       container.querySelectorAll('.group').forEach(function (g) {
         g.classList.toggle('hidden', !g.querySelector('.item:not(.hidden)'));
       });
+      none.classList.toggle('hidden', !!container.querySelector('.item:not(.hidden)'));
     });
-    main.insertBefore(input, container);
+    main.insertBefore(h('div', { class: 'searchbox' }, icon('search', 18), input), container);
+    main.appendChild(none);
   }
 
   /* ============ Copiar ============ */
 
-  function copyText(text, btn) {
+  function copyText(text, btn, label) {
     function done() {
-      btn.textContent = 'Copiado';
-      btn.classList.add('ok');
-      setTimeout(function () { btn.textContent = 'Copiar'; btn.classList.remove('ok'); }, 1600);
+      label.textContent = 'Copiado';
+      btn.classList.add('done');
+      setTimeout(function () { label.textContent = 'Copiar'; btn.classList.remove('done'); }, 1600);
     }
     function fallback() {
       var ta = h('textarea', { 'aria-hidden': 'true', style: 'position:fixed;opacity:0;top:0;left:0' });
@@ -231,10 +296,9 @@
   /* ============ Páginas ============ */
 
   function renderHome(main) {
-    main.appendChild(h('h1', { text: 'Segundo cerebro' }));
-    main.appendChild(h('p', { class: 'lead', text: 'Mi material de trabajo, en un solo sitio.' }));
-    var rows = h('div', { class: 'rows' });
-    main.appendChild(rows);
+    pageHead(main, 'Segundo cerebro', 'Mi material de trabajo, en un solo sitio.');
+    var grid = h('div', { class: 'grid big' });
+    main.appendChild(grid);
 
     Promise.all([
       getManifest().catch(function () { return null; }),
@@ -248,17 +312,20 @@
       SECTIONS.forEach(function (s) {
         var count = '';
         if (s.kind === 'folders') {
-          var d = groupFolders(m[s.id] || []);
-          count = plural(Object.keys(d.folders).length, s.noun, s.nouns);
+          count = plural(Object.keys(groupFolders(m[s.id] || []).folders).length, s.noun, s.nouns);
         } else if (s.kind === 'recursos') {
-          var files = (m.recursos || []).length;
-          count = plural(nLinks, 'enlace', 'enlaces') + ' y ' + plural(files, 'archivo', 'archivos');
+          count = plural(nLinks + (m.recursos || []).length, 'elemento', 'elementos');
         } else if (s.kind === 'prompts') {
           count = plural(nPrompts, 'prompt', 'prompts');
         }
-        rows.appendChild(h('a', { class: 'row', href: s.id + '/' },
-          h('div', null, h('span', { class: 't', text: s.name }), h('span', { class: 'd', text: s.desc })),
-          h('span', { class: 'n', text: count })));
+        grid.appendChild(h('a', { class: 'card home-card c-' + s.id, href: s.id + '/' },
+          h('span', { class: 'tile' }, icon(s.icon, 24)),
+          h('div', null,
+            h('span', { class: 'card-title', text: s.name }),
+            h('span', { class: 'card-desc', text: s.desc })),
+          h('div', { class: 'card-foot' },
+            h('span', { class: 'pill', text: count }),
+            h('span', { class: 'go' }, icon('arrow', 20)))));
       });
     });
   }
@@ -274,107 +341,128 @@
 
         if (chosen && data.folders[chosen]) {
           var files = data.folders[chosen];
-          main.appendChild(h('a', { class: 'back', href: '#', text: '← ' + s.back }));
-          main.appendChild(h('h1', { text: nice(chosen) }));
-          main.appendChild(h('p', { class: 'lead', text: plural(files.length, 'archivo', 'archivos') }));
+          main.appendChild(h('div', { class: 'crumbs' },
+            h('a', { class: 'back', href: '#' }, icon('back', 16), s.name)));
+          pageHead(main, nice(chosen), plural(files.length, 'archivo', 'archivos'));
           main.appendChild(fileGroups(s.id, chosen + '/', files));
           window.scrollTo(0, 0);
           return;
         }
 
-        main.appendChild(h('h1', { text: s.name }));
-        main.appendChild(h('p', { class: 'lead', text: s.desc }));
+        pageHead(main, s.name, s.desc);
 
         if (!names.length && !data.loose.length) {
           main.appendChild(emptyNote('Todavía no hay nada. Crea una carpeta y sube tus archivos dentro de', s.id + '/'));
           return;
         }
 
-        var rows = h('div', { class: 'rows' });
-        names.forEach(function (n) {
-          rows.appendChild(h('a', { class: 'row', href: '#' + encodeURIComponent(n) },
-            h('div', null, h('span', { class: 't', text: nice(n) })),
-            h('span', { class: 'n', text: plural(data.folders[n].length, 'archivo', 'archivos') })));
-        });
-        if (names.length) main.appendChild(rows);
+        if (names.length) {
+          var grid = h('div', { class: 'grid' });
+          names.forEach(function (n) {
+            grid.appendChild(h('a', { class: 'card c-' + s.id, href: '#' + encodeURIComponent(n) },
+              h('span', { class: 'tile' }, icon('folder', 24)),
+              h('span', { class: 'card-title', text: nice(n) }),
+              h('div', { class: 'card-foot' },
+                h('span', { class: 'pill', text: plural(data.folders[n].length, 'archivo', 'archivos') }),
+                h('span', { class: 'go' }, icon('arrow', 20)))));
+          });
+          main.appendChild(grid);
+        }
 
         if (data.loose.length) {
-          main.appendChild(h('h2', { text: 'Archivos sueltos' }));
+          main.appendChild(h('div', { class: 'sec-title' }, 'Archivos sueltos',
+            h('span', { class: 'count', text: String(data.loose.length) })));
           main.appendChild(fileGroups(s.id, '', data.loose));
         }
-      }).catch(function () { main.textContent = ''; main.appendChild(h('h1', { text: s.name })); errorNote(main); });
+      }).catch(function () { main.textContent = ''; pageHead(main, s.name, s.desc); errorNote(main); });
     }
     window.addEventListener('hashchange', draw);
     draw();
   }
 
   function renderPrompts(main, s) {
-    main.appendChild(h('h1', { text: s.name }));
     getText('prompts/prompts.md').then(function (md) {
       var list = parsePrompts(md);
-      main.appendChild(h('p', { class: 'lead', text: s.desc }));
+      pageHead(main, s.name, list.length ? plural(list.length, 'prompt', 'prompts') + '. ' + 'Copia el que necesites con un clic.' : s.desc);
       if (!list.length) {
         main.appendChild(emptyNote('Todavía no hay prompts. Escríbelos en el archivo', 'prompts/prompts.md'));
         return;
       }
-      var box = h('div', { class: 'rows' });
+      var grid = h('div', { class: 'grid prompts' });
+      var overflowChecks = [];
       list.forEach(function (p) {
-        var btn = h('button', { class: 'btn', type: 'button', text: 'Copiar' });
-        btn.addEventListener('click', function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          copyText(p.text, btn);
+        var label = h('span', { text: 'Copiar' });
+        var copyBtn = h('button', { class: 'btn primary', type: 'button' }, icon('copy', 16), label);
+        copyBtn.addEventListener('click', function () { copyText(p.text, copyBtn, label); });
+
+        var card = h('article', { class: 'card prompt-card item c-prompts',
+                                  'data-search': (p.title + ' ' + p.text).toLowerCase() });
+        var actions = h('div', { class: 'p-actions' }, copyBtn);
+        var more = h('button', { class: 'btn ghost', type: 'button', text: 'Ver completo' });
+        more.addEventListener('click', function () {
+          var open = card.classList.toggle('open');
+          more.textContent = open ? 'Ver menos' : 'Ver completo';
         });
-        var excerpt = p.text.replace(/\s+/g, ' ').slice(0, 140);
-        var det = h('details', { class: 'prompt item', 'data-search': (p.title + ' ' + p.text).toLowerCase() },
-          h('summary', null,
-            h('span', { class: 'p-main' },
-              h('span', { class: 'p-title', text: p.title }),
-              h('span', { class: 'p-excerpt', text: excerpt })),
-            btn),
-          h('pre', { class: 'p-text', text: p.text }));
-        box.appendChild(det);
+        actions.appendChild(more);
+        var body = h('p', { class: 'p-body', text: p.text });
+        card.appendChild(h('span', { class: 'tile' }, icon('chat', 22)));
+        card.appendChild(h('span', { class: 'card-title', text: p.title }));
+        card.appendChild(body);
+        card.appendChild(actions);
+        grid.appendChild(card);
+        // El botón solo se muestra si el texto no cabe en la tarjeta cerrada
+        overflowChecks.push(function () {
+          if (card.classList.contains('open')) return;
+          more.classList.toggle('hidden', body.scrollHeight <= body.clientHeight + 1);
+        });
       });
-      main.appendChild(box);
-      addSearch(main, box, 'Buscar un prompt');
-    }).catch(function () { main.appendChild(h('p', { class: 'lead', text: s.desc })); errorNote(main); });
+      main.appendChild(grid);
+      function runChecks() { overflowChecks.forEach(function (f) { f(); }); }
+      runChecks();
+      window.addEventListener('resize', runChecks);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(runChecks);
+      addSearch(main, grid, 'Buscar un prompt');
+    }).catch(function () { pageHead(main, s.name, s.desc); errorNote(main); });
   }
 
   function renderRecursos(main, s) {
-    main.appendChild(h('h1', { text: s.name }));
-    main.appendChild(h('p', { class: 'lead', text: s.desc }));
+    pageHead(main, s.name, s.desc);
     Promise.all([getManifest(), optionalText('recursos/enlaces.md')]).then(function (res) {
       var files = res[0].recursos || [];
       var groups = parseLinks(res[1]);
       var box = h('div');
 
       if (!groups.length && !files.length) {
-        main.appendChild(emptyNote('Todavía no hay nada. Añade enlaces en', 'recursos/enlaces.md'));
-        main.appendChild(h('p', { class: 'lead' }, 'Los PDF y otros archivos se suben dentro de la carpeta ', h('code', { text: 'recursos/' }), '.'));
+        main.appendChild(emptyNote('Todavía no hay nada. Añade enlaces en', 'recursos/enlaces.md',
+          ['Los PDF y otros archivos se suben dentro de la carpeta ', h('code', { text: 'recursos/' }), '.']));
         return;
       }
 
-      if (groups.length) {
-        box.appendChild(h('h2', { text: 'Enlaces' }));
-        groups.forEach(function (g) {
-          var wrap = h('div', { class: 'group' });
-          if (g.name) wrap.appendChild(h('h2', { text: g.name }));
-          var rows = h('div', { class: 'rows' });
-          g.items.forEach(function (it) {
-            rows.appendChild(h('a', { class: 'link-row item', href: it.url, target: '_blank', rel: 'noopener noreferrer',
-                                      'data-search': (it.title + ' ' + it.desc + ' ' + g.name).toLowerCase() },
-              h('span', null, h('span', { class: 'link-name', text: it.title }),
-                it.desc ? h('span', { class: 'd', text: it.desc }) : null),
-              h('span', { class: 'host', text: host(it.url) })));
-          });
-          wrap.appendChild(rows);
-          box.appendChild(wrap);
+      groups.forEach(function (g) {
+        var wrap = h('div', { class: 'group' });
+        wrap.appendChild(h('div', { class: 'sec-title' }, icon('link', 18), g.name || 'Enlaces',
+          h('span', { class: 'count', text: String(g.items.length) })));
+        var grid = h('div', { class: 'grid' });
+        g.items.forEach(function (it) {
+          grid.appendChild(h('a', { class: 'card link-card c-recursos item', href: it.url, target: '_blank',
+                                    rel: 'noopener noreferrer',
+                                    'data-search': (it.title + ' ' + it.desc + ' ' + g.name).toLowerCase() },
+            h('span', { class: 'tile' }, icon('link', 22)),
+            h('div', null,
+              h('span', { class: 'card-title', text: it.title }),
+              it.desc ? h('span', { class: 'card-desc line-clamp', text: it.desc }) : null),
+            h('div', { class: 'card-foot' },
+              h('span', { class: 'host', text: host(it.url) }),
+              h('span', { class: 'go' }, icon('external', 18)))));
         });
-      }
+        wrap.appendChild(grid);
+        box.appendChild(wrap);
+      });
 
       if (files.length) {
-        box.appendChild(h('h2', { text: 'Archivos' }));
-        box.appendChild(fileGroups(s.id, '', files, 'h2'));
+        box.appendChild(h('div', { class: 'sec-title' }, icon('bookmark', 18), 'Archivos',
+          h('span', { class: 'count', text: String(files.length) })));
+        box.appendChild(fileGroups(s.id, '', files));
       }
 
       main.appendChild(box);
@@ -384,7 +472,7 @@
 
   function renderPage(main) {
     if (PAGE === 'home') return renderHome(main);
-    var s = SECTIONS.filter(function (x) { return x.id === PAGE; })[0];
+    var s = sectionById(PAGE);
     if (!s) return;
     if (s.kind === 'folders') renderFolders(main, s);
     else if (s.kind === 'prompts') renderPrompts(main, s);
@@ -397,13 +485,16 @@
     var shell = document.getElementById('shell');
     var nav = h('nav', { 'aria-label': 'Secciones' });
     SECTIONS.forEach(function (s) {
-      nav.appendChild(h('a', { href: ROOT + s.id + '/', text: s.name,
-                               'aria-current': PAGE === s.id ? 'page' : null }));
+      nav.appendChild(h('a', { class: 'c-' + s.id, href: ROOT + s.id + '/',
+                               'aria-current': PAGE === s.id ? 'page' : null },
+        icon(s.icon, 20), s.name));
     });
     var side = h('header', { class: 'side' },
-      h('a', { class: 'brand', href: ROOT || './', text: 'Segundo cerebro' }),
+      h('a', { class: 'brand', href: ROOT || './' },
+        h('span', { class: 'brand-mark' }, icon('spark', 20)), 'Segundo cerebro'),
       nav,
-      h('button', { class: 'link-btn', type: 'button', text: 'Salir', onclick: logout }));
+      h('button', { class: 'logout', type: 'button', onclick: logout, 'aria-label': 'Salir' },
+        icon('logout', 18), h('span', { class: 'label', text: 'Salir' })));
     var main = h('main', { id: 'main' });
     shell.appendChild(side);
     shell.appendChild(main);
@@ -443,10 +534,12 @@
     var err = h('p', { class: 'gate-err', role: 'alert' });
     var gate = h('div', { class: 'gate' });
     var form = h('form', { class: 'gate-box' },
-      h('p', { class: 'brand', text: 'Segundo cerebro' }),
+      h('span', { class: 'brand-mark' }, icon('spark', 24)),
+      h('h1', { text: 'Segundo cerebro' }),
+      h('p', { class: 'sub', text: 'Introduce la contraseña para entrar.' }),
       h('label', { for: 'pw', text: 'Contraseña' }),
       input,
-      h('button', { class: 'btn btn-fill', type: 'submit', text: 'Entrar' }),
+      h('button', { class: 'btn primary', type: 'submit', text: 'Entrar' }),
       err);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
