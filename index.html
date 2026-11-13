@@ -1,93 +1,18 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="locked">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
   <title>Segundo cerebro</title>
-  <style>
-    :root {
-      --bg: #fbfbfa;
-      --text: #1f2328;
-      --muted: #656d76;
-      --line: #d8dce0;
-      --link: #0b5cad;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #14171a;
-        --text: #e6e8ea;
-        --muted: #98a1aa;
-        --line: #2c3238;
-        --link: #6cb2f5;
-      }
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Georgia, "Times New Roman", serif;
-      line-height: 1.65;
-    }
-    .wrap { max-width: 42rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
-    h1 { font-size: 2rem; margin: 0 0 .25rem; line-height: 1.2; }
-    .sub { margin: 0 0 1.5rem; color: var(--muted); }
-    nav { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; padding: 1rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-family: system-ui, sans-serif; font-size: .95rem; }
-    a { color: var(--link); }
-    a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
-    section { margin-top: 2.5rem; scroll-margin-top: 1rem; }
-    h2 { font-size: 1.3rem; margin: 0 0 .25rem; }
-    .desc { margin: 0 0 .75rem; color: var(--muted); }
-    ul { margin: 0; padding-left: 1.2rem; }
-    li { margin: .25rem 0; }
-    .empty { color: var(--muted); font-style: italic; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Source+Sans+3:wght@400..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <main class="wrap">
-    <h1>Segundo cerebro</h1>
-    <p class="sub">Mis notas y material de trabajo.</p>
-
-    <nav aria-label="Secciones">
-      <a href="#diapositivas">Diapositivas</a>
-      <a href="#organizacion">Organización</a>
-      <a href="#recursos">Recursos</a>
-      <a href="#prompts">Prompts</a>
-    </nav>
-
-    <section id="diapositivas">
-      <h2>Diapositivas</h2>
-      <p class="desc">Presentaciones.</p>
-      <ul>
-        <li class="empty">Aún no hay presentaciones. Añade un enlace aquí.</li>
-        <!-- Ejemplo: <li><a href="01-diapositivas/mi-presentacion.pdf">Mi presentación</a></li> -->
-      </ul>
-    </section>
-
-    <section id="organizacion">
-      <h2>Organización</h2>
-      <p class="desc">Reuniones, tareas, objetivos y procesos.</p>
-      <ul>
-        <li class="empty">Aún no hay notas. Añade un enlace aquí.</li>
-      </ul>
-    </section>
-
-    <section id="recursos">
-      <h2>Recursos</h2>
-      <p class="desc">Guías, documentación y enlaces útiles.</p>
-      <ul>
-        <li class="empty">Aún no hay recursos. Añade un enlace aquí.</li>
-      </ul>
-    </section>
-
-    <section id="prompts">
-      <h2>Prompts</h2>
-      <p class="desc">Prompts que reutilizo.</p>
-      <ul>
-        <li class="empty">Aún no hay prompts. Añade un enlace aquí.</li>
-      </ul>
-    </section>
-  </main>
+<body data-page="home" data-root="">
+  <div class="shell" id="shell"></div>
+  <noscript><p style="padding:2rem">Activa JavaScript para ver esta página.</p></noscript>
+  <script src="app.js"></script>
 </body>
 </html>
